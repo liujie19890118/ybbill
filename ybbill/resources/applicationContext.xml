@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xmlns:aop="http://www.springframework.org/schema/aop"
+     xmlns:tx="http://www.springframework.org/schema/tx"
+     xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+     xmlns:context="http://www.springframework.org/schema/context"
+     xsi:schemaLocation="
+     http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+     http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+     http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-3.0.xsd
+     http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+     http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
+
+	<!-- in-memory database and a datasource
+	
+     	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">     
+     		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver" />     
+     		<property name="url" value="jdbc:oracle:thin:@192.168.0.21:1521:orcl"/>     
+     		<property name="username" value="HNSJMYB_PLATFORM"/>     
+     		<property name="password" value="HNSJMYB_PLATFORM"/>     
+     	</bean> -->
+     	<!--加载基本组件的配置 -->
+	<!--此bean告诉Spring去哪找数据库的配置信息,因为有此Bean才出现下面用${}标记来取变量的语句 -->
+	<bean id="propertyConfig" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="location">
+			<value>classpath:db.properties</value>
+		</property>
+	</bean>
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+		<property name="driverClassName" value="${base.driverClassName}" />
+		<property name="url" value="${base.url}" />
+		<property name="username" value="${base.username}" />
+		<property name="password" value="${base.password}" />
+		<property name="defaultAutoCommit" value="true" /><!-- 从数据源中返回的连接是否采用自动提交机制 -->
+		<property name="defaultReadOnly" value="false" /><!-- 是否仅能执行只读操作 -->
+		<property name="initialSize" value="0" />
+		<property name="maxActive" value="50" /><!-- 最大连接数据库连接数，设置为0时，表示没有限制 -->
+		<property name="maxIdle" value="1" /><!-- 最大等待连接中的数量，设置为0时，表示没有限制 -->
+		<property name="maxWait" value="6000" /><!-- 最大等待秒数，单位为毫秒 -->
+		<property name="testWhileIdle" value="true"/>
+		<property name="timeBetweenEvictionRunsMillis" value="60000" />
+		<property name="numTestsPerEvictionRun" value="1" />
+		<property name="validationQuery" value="select 1" />
+	</bean>
+     	
+	 <!-- transaction manager, use JtaTransactionManager for global tx -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+	
+	 <!-- define the SqlSessionFactory -->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource" />
+        <property name="configLocation" value="classpath:mybatis-config.xml" />
+    </bean>
+	
+	<!-- scan for mappers and let them be autowired -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.xyh.rb.Mapper" />
+    </bean>
+	
+    <!--配置事务处理策略，transaction-manager属性指定事务管理器。若事务管理器bean的id即为transactionManager，
+		则 transaction-manager的属性可以不指定-->
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<!--所有以select*开头的方法都是只读的-->
+			<tx:method name="select*" read-only="true" />
+			<tx:method name="update*" rollback-for="ServiceException"/>
+			<tx:method name="insert*" />
+			<tx:method name="delete*" />
+		</tx:attributes>
+	</tx:advice>
+	<!-- AOP配置-->
+	<aop:config>
+		<!--pointcut元素定义一个切入点，execution中的第一个星号 用以匹配方法的返回类型，这里星号表明匹配所有返回类型。
+			com.abc.dao.*.*(..)表明匹配com.abc.dao包下的所有类的所有 方法-->
+		<aop:pointcut id="hisPointcut" expression="execution(* com.xyh.rb.Daoservice..*.*(..))" />
+		<!--将定义好的事务处理策略应用到上述的切入点-->
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="hisPointcut" />
+	</aop:config>
+	<!--账单查询-->
+	<bean id="daoZdcxImpl" class="com.xyh.rb.Daoservice.znfz.zdcx.DaoZdcxImpl">     
+		<property name="zdcxMapper" ref="zdcxMapper"/>
+	</bean>
+	
+</beans>

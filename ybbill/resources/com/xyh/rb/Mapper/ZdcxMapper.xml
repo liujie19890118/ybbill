@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  
+    PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"  
+    "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper namespace="com.xyh.rb.Mapper.ZdcxMapper">
+	<resultMap type="com.xyh.platform.models.MapResultModel" id="zdcxhMap"></resultMap>
+	<!-- 医保账单查询 -->
+	<select id="queryBill" parameterType="mapModel" statementType="CALLABLE" resultMap="zdcxhMap">
+		{call PRC_abnormalistPage(
+		 #{ORGCODE,jdbcType=VARCHAR,mode=IN}
+		,#{STARTTIME,jdbcType=VARCHAR,mode=IN}
+	    ,#{ENDTIME,jdbcType=VARCHAR,mode=IN}
+	    ,#{payorderno,jdbcType=VARCHAR,mode=IN}
+	    ,#{beginRow,jdbcType=VARCHAR,mode=IN}
+	    ,#{pageSize,jdbcType=VARCHAR,mode=IN}
+		,#{RESULTCODE,jdbcType=VARCHAR,mode=OUT}
+		,#{RESULTMESSAGE,jdbcType=VARCHAR,mode=OUT}
+		,#{RESULTCOUNT,jdbcType=VARCHAR,mode=OUT}
+	    )}
+	</select>
+</mapper>
